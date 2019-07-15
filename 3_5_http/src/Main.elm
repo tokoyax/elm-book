@@ -42,10 +42,16 @@ update msg model =
     case msg of
         Click ->
             ( model
-            , Http.get
-                { url = "http://api.github.com/repos/elm/core"
-                , expect = Http.expectString GotRepo
-                }
+            , Cmd.batch
+                [ Http.get
+                    { url = "http://api.github.com/repos/elm/core"
+                    , expect = Http.expectString GotRepo
+                    }
+                , Http.get
+                    { url = "http://api.github.com/repos/elm/svg"
+                    , expect = Http.expectString GotRepo
+                    }
+                ]
             )
 
         GotRepo (Ok repo) ->
