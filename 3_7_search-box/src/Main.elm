@@ -63,9 +63,14 @@ update msg model =
                 | input = ""
                 , userState = Waiting
               }
-            , Http.get
-                { url = "http://api.github.com/users/" ++ model.input
-                , expect = Http.expectJson Receive userDecoder
+            , Http.request
+                { method = "GET"
+                , headers = []
+                , url = "http://api.github.com/users/" ++ model.input
+                , body = Http.emptyBody
+                , expect = expectJson Receive userDecoder
+                , timeout = Nothing
+                , tracker = Nothing
                 }
             )
 
@@ -74,6 +79,33 @@ update msg model =
 
         Receive (Err e) ->
             ( { model | userState = Failed e }, Cmd.none )
+
+
+expectJson : (Result Http.Error a -> msg) -> D.Decoder a -> Http.Expect msg
+expectJson toMsg decoder =
+    Http.expectStringResponse toMsg <|
+        \response ->
+            case response of
+                Http.BadUrl_ url ->
+                    Err (Http.BadUrl url)
+
+                Http.Timeout_ ->
+                    Err Http.Timeout
+
+                Http.NetworkError_ ->
+                    Err Http.NetworkError
+
+                Http.BadStatus_ metadata _ ->
+                    Err (Http.BadStatus metadata.statusCode)
+
+                Http.GoodStatus_ _ body ->
+                    case D.decodeString decoder body of
+                        Ok value ->
+                            Ok value
+
+                        Err err ->
+                            Err
+                                (Http.BadBody <| D.errorToString err)
 
 
 
