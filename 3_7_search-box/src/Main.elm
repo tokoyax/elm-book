@@ -124,7 +124,24 @@ view model =
                     ]
 
             Failed error ->
-                div [] [ text (Debug.toString error) ]
+                div []
+                    [ text <|
+                        case error of
+                            Http.BadUrl msg ->
+                                msg
+
+                            Http.Timeout ->
+                                "タイムアウトしました"
+
+                            Http.NetworkError ->
+                                "ネットワークエラーです"
+
+                            Http.BadStatus num ->
+                                "ステータス異常です : " ++ String.fromInt num
+
+                            Http.BadBody msg ->
+                                "なんかコンテンツがおかしい : " ++ msg
+                    ]
         ]
 
 
