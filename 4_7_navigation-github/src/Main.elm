@@ -2,10 +2,10 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import Github exposing (Issue, Repo)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
-import Json.Decode as D exposing (Decoder)
 import Route exposing (Route)
 import Url
 import Url.Builder
@@ -46,7 +46,7 @@ type Page
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init _ url key =
     Model key TopPage
         |> goTo (Route.parse url)
 
@@ -102,30 +102,17 @@ goTo maybeRoute model =
 
         Just (Route.User userName) ->
             ( model
-            , Http.get
-                { url =
-                    Url.Builder.crossOrigin "https://api.github.com"
-                        [ "users", userName, "repos" ]
-                        []
-                , expect =
-                    Http.expectJson
-                        (Result.map UserPage >> Loaded)
-                        reposDecoder
-                }
+            , Github.getRepos
+                (Result.map UserPage >> Loaded)
+                userName
             )
 
         Just (Route.Repo userName projectName) ->
             ( model
-            , Http.get
-                { url =
-                    Url.Builder.crossOrigin "https://api.github.com"
-                        [ "repos", userName, projectName, "issues" ]
-                        []
-                , expect =
-                    Http.expectJson
-                        (Result.map RepoPage >> Loaded)
-                        issuesDecoder
-                }
+            , Github.getIssues
+                (Result.map RepoPage >> Loaded)
+                userName
+                projectName
             )
 
 
@@ -225,55 +212,3 @@ viewIssue issue =
 viewLink : String -> Html msg
 viewLink path =
     li [] [ a [ href path ] [ text path ] ]
-
-
-
--- GITHUB
-
-
-type alias Repo =
-    { name : String
-    , description : Maybe String
-    , language : Maybe String
-    , owner : String
-    , fork : Int
-    , star : Int
-    , watch : Int
-    }
-
-
-type alias Issue =
-    { number : Int
-    , title : String
-    , state : String
-    }
-
-
-reposDecoder : Decoder (List Repo)
-reposDecoder =
-    D.list repoDecoder
-
-
-repoDecoder : Decoder Repo
-repoDecoder =
-    D.map7 Repo
-        (D.field "name" D.string)
-        (D.maybe (D.field "description" D.string))
-        (D.maybe (D.field "language" D.string))
-        (D.at [ "owner", "login" ] D.string)
-        (D.field "forks_count" D.int)
-        (D.field "stargazers_count" D.int)
-        (D.field "watchers_count" D.int)
-
-
-issuesDecoder : Decoder (List Issue)
-issuesDecoder =
-    D.list issueDecoder
-
-
-issueDecoder : Decoder Issue
-issueDecoder =
-    D.map3 Issue
-        (D.field "number" D.int)
-        (D.field "title" D.string)
-        (D.field "state" D.string)
