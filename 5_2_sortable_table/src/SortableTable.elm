@@ -6,7 +6,11 @@ import Html.Events exposing (onClick)
 
 {-| テーブルの状態
 -}
-type alias Model =
+type Model
+    = Model Internal
+
+
+type alias Internal =
     { sortColumn : Maybe String
     , reversed : Bool
     }
@@ -26,7 +30,7 @@ type Msg
 
 init : Model
 init =
-    Model Nothing False
+    Model <| Internal Nothing False
 
 
 
@@ -34,18 +38,19 @@ init =
 
 
 update : Msg -> Model -> Model
-update msg model =
+update msg (Model internal) =
     case msg of
         ClickColumn columnName ->
-            { model
-                | sortColumn = Just columnName
-                , reversed =
-                    if Maybe.withDefault "" model.sortColumn == columnName then
-                        not model.reversed
+            Model
+                { internal
+                    | sortColumn = Just columnName
+                    , reversed =
+                        if Maybe.withDefault "" internal.sortColumn == columnName then
+                            not internal.reversed
 
-                    else
-                        False
-            }
+                        else
+                            False
+                }
 
 
 
@@ -53,17 +58,17 @@ update msg model =
 
 
 view : (Model -> msg) -> Model -> List String -> Html msg
-view toMsg model items =
-    Html.map (\msg -> toMsg (update msg model)) <|
-        viewHelp model items
+view toMsg (Model internal) items =
+    Html.map (\msg -> toMsg (update msg (Model internal))) <|
+        viewHelp internal items
 
 
-viewHelp : Model -> List String -> Html Msg
-viewHelp model items =
+viewHelp : Internal -> List String -> Html Msg
+viewHelp internal items =
     ul [] <|
         List.append
             viewHeader
-            (viewItems model items)
+            (viewItems internal items)
 
 
 viewHeader : List (Html Msg)
@@ -71,16 +76,16 @@ viewHeader =
     [ li [ onClick <| ClickColumn "book name" ] [ text "book name" ] ]
 
 
-viewItems : Model -> List String -> List (Html Msg)
-viewItems model items =
+viewItems : Internal -> List String -> List (Html Msg)
+viewItems internal items =
     items
-        |> sortItems model
+        |> sortItems internal
         |> List.map (\item -> li [] [ text item ])
 
 
-sortItems : Model -> List String -> List String
-sortItems model items =
-    if model.reversed then
+sortItems : Internal -> List String -> List String
+sortItems internal items =
+    if internal.reversed then
         List.reverse items
 
     else
