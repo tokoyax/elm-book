@@ -22,7 +22,7 @@ type alias Model =
 
 
 type Msg
-    = UpdateTable SortableTable.Msg
+    = UpdateTable SortableTable.Model
 
 
 init : () -> ( Model, Cmd Msg )
@@ -35,10 +35,9 @@ init _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "msg" msg of
-        UpdateTable tableMsg ->
+        UpdateTable tableState ->
             ( { model
-                | tableState =
-                    SortableTable.update tableMsg model.tableState
+                | tableState = tableState
               }
             , Cmd.none
             )
@@ -46,7 +45,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    Html.map UpdateTable <|
-        SortableTable.view
-            (Debug.log "model.tableState" model.tableState)
-            (Debug.log "model.books" model.books)
+    SortableTable.view
+        UpdateTable
+        (Debug.log "model.tableState" model.tableState)
+        (Debug.log "model.books" model.books)

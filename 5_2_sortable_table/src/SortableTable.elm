@@ -52,8 +52,14 @@ update msg model =
 {- テーブルを描画する -}
 
 
-view : Model -> List String -> Html Msg
-view model items =
+view : (Model -> msg) -> Model -> List String -> Html msg
+view toMsg model items =
+    Html.map (\msg -> toMsg (update msg model)) <|
+        viewHelp model items
+
+
+viewHelp : Model -> List String -> Html Msg
+viewHelp model items =
     ul [] <|
         List.append
             viewHeader
